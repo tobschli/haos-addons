@@ -1,12 +1,13 @@
+
+> [!NOTE]
+> This project was **fully** written with AI assistance. Don't expect this to work well.
+
 # haos-addons
 
 My **single Home Assistant add-on repository** — add it in Home Assistant under
 **Settings → Add-ons → Add-on Store → ⋮ → Repositories**, once, for everything.
 
-Style follows [alexbelgium/hassio-addons](https://github.com/alexbelgium/hassio-addons):
-each add-on is a folder at the repo root with its own `Dockerfile` that packages
-the application's prebuilt image, plus `config.yaml`, `DOCS.md` and `run.sh`.
-No app source code lives here — code stays in the app repos.
+Style follows [alexbelgium/hassio-addons](https://github.com/alexbelgium/hassio-addons)
 
 ## How a release reaches Home Assistant
 
