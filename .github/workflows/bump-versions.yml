@@ -1,0 +1,46 @@
+name: Bump add-on versions
+
+# Weekly: read the latest release tag of each add-on's source repo and bump
+# the add-on version here. The commit triggers the image build workflow.
+# Add a new add-on by appending "addon-slug" to the addons list below.
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump add-ons
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          addons=(konzatsu)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          for slug in "${addons[@]}"; do
+            current="$(grep -m1 '^version:' "${slug}/config.yaml" | sed 's/.*"\(.*\)".*/\1/')"
+            upstream="$(gh release view --repo "tobschli/${slug}" --json tagName --jq .tagName 2>/dev/null | sed 's/^v//')"
+            if [ -z "${upstream}" ]; then
+              # No GitHub release yet: fall back to the latest v* git tag
+              upstream="$(git ls-remote --tags "https://github.com/tobschli/${slug}.git" 'refs/tags/v*' --refs | sed 's|.*refs/tags/v||' | sort -V | tail -1)"
+            fi
+            echo "== ${slug}: current=${current} upstream=${upstream}"
+            [ "${current}" = "${upstream}" ] && continue
+
+            arg="$(echo "${slug}" | tr '[:lower:]-' '[:upper:]_')_VERSION"
+            sed -i "s/^version: .*/version: \"${upstream}\"/" "${slug}/config.yaml"
+            sed -i "s/^ARG ${arg}=.*/ARG ${arg}=${upstream}/" "${slug}/Dockerfile"
+            git add "${slug}"
+            git commit -m "bump ${slug} to ${upstream}"
+          done
+
+          git push
